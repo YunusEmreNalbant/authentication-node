@@ -28,9 +28,15 @@ export const register = async (req, res) => {
 }
 
 export const login = async (req, res) => {
-    jwt.sign({user: req.body}, 'secretkey', (err, token) => {
-        res.json({
-            token: token,
-        })
-    });
+    const user = await User.findOne({email: req.body.email})
+    if (!user) return res.status(400).json({"message": 'Böyle bir e-mail kayıtlı değil.'});
+
+    const validPass = await bcrypt.compare(req.body.password,user.password);
+    if(!validPass) return res.status(400).json({"message": 'Şifre hatalı'});
+
+    const token = jwt.sign({_id:user._id},process.env.TOKEN_SECRET)
+    res.header('auth-token',token).send(token);
+
+
+
 }
